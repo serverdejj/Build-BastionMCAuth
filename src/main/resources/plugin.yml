@@ -1,0 +1,13 @@
+name: BastionMCAuth
+version: 0.1.0-beta
+main: mc.bastion.auth.BastionMCAuth
+api-version: '1.21'
+author: BASTION MC
+description: Basic password authentication for offline-mode servers (beta)
+commands:
+  login:
+    description: Iniciar sesion
+    usage: /login <contraseña>
+  register:
+    description: Registrar cuenta
+    usage: /register <contraseña> <confirmación>

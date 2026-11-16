@@ -1,0 +1,42 @@
+authentication:
+  login-timeout-seconds: 60
+  max-login-attempts: 3
+  min-password-length: 10
+  bcrypt-cost: 12
+security:
+  freeze-player: true
+  block-chat: true
+  block-interactions: true
+  block-inventory: true
+  prevent-damage: true
+  prevent-item-drop: true
+  prevent-item-pickup: true
+  # No habilitar sesiones automaticas en servidores offline-mode.
+titles:
+  enabled: true
+  refresh-ticks: 20
+  title: '&#FFCC33&l¡BIENVENIDO A BASTION MC!'
+  login-subtitle: '&aUsa /login <contraseña>'
+  register-subtitle: '&aUsa /register <contraseña> <contraseña>'
+login-effects:
+  enabled: true
+  darkness: true
+  slowness-amplifier: 9
+  hide-particles: true
+  hide-icon: true
+messages:
+  login-required: '&eInicia sesión: &a/login <contraseña>'
+  register-required: '&eRegístrate: &a/register <contraseña> <contraseña>'
+  registered: '&a¡Cuenta registrada y sesión iniciada!'
+  logged-in: '&a¡Bienvenido a BASTION MC!'
+  wrong-password: '&cContraseña incorrecta.'
+  too-many-attempts: '&cDemasiados intentos fallidos.'
+  timeout: '&cTiempo agotado para iniciar sesión.'
+  already-registered: '&cYa estás registrado. Usa /login.'
+  not-registered: '&cNo estás registrado. Usa /register.'
+  already-logged-in: '&eYa iniciaste sesión.'
+  passwords-differ: '&cLas contraseñas no coinciden.'
+  password-short: '&cLa contraseña es demasiado corta.'
+  usage-login: '&eUso: /login <contraseña>'
+  usage-register: '&eUso: /register <contraseña> <contraseña>'
+  unavailable: '&cAutenticación temporalmente no disponible. Inténtalo después.'
