@@ -39,6 +39,7 @@ public final class BastionMCAuth extends JavaPlugin implements Listener, TabComp
     private final Map<UUID, PotionEffect> oldDarkness = new HashMap<>();
     private final Map<UUID, PotionEffect> oldSlowness = new HashMap<>();
     private final Map<UUID, Location> frozen = new HashMap<>();
+    private final Set<UUID> internalSpawnTeleports = new HashSet<>();
     private static final Pattern HEX = Pattern.compile("&#([0-9a-fA-F]{6})");
 
     @Override public void onEnable() {
@@ -60,6 +61,7 @@ public final class BastionMCAuth extends JavaPlugin implements Listener, TabComp
         Objects.requireNonNull(getCommand("register")).setExecutor(this);
         getCommand("login").setTabCompleter(this);
         getCommand("register").setTabCompleter(this);
+        Objects.requireNonNull(getCommand("authsetspawn")).setExecutor(this);
         Bukkit.getScheduler().runTaskTimer(this, this::tick, 1L, Math.max(1L, getConfig().getLong("titles.refresh-ticks", 20L)));
         for (Player p : Bukkit.getOnlinePlayers()) begin(p);
         if (!Bukkit.getOnlineMode()) getLogger().warning("Servidor offline-mode: /login no verifica propiedad de cuentas Microsoft. Proteja el servidor con firewall y proxy adecuados.");
@@ -88,6 +90,30 @@ public final class BastionMCAuth extends JavaPlugin implements Listener, TabComp
             s.setString(1, username);
             try (ResultSet r = s.executeQuery()) { return r.next() ? r.getString(1) : null; }
         }
+    }
+    private Location configuredSpawn() {
+        if (!getConfig().getBoolean("spawn.teleport-on-join", false)) return null;
+        String worldName = getConfig().getString("spawn.location.world", "");
+        org.bukkit.World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            getLogger().warning("Spawn de autenticacion no configurado o mundo inexistente: " + worldName);
+            return null;
+        }
+        return new Location(world,
+            getConfig().getDouble("spawn.location.x"), getConfig().getDouble("spawn.location.y"),
+            getConfig().getDouble("spawn.location.z"),
+            (float) getConfig().getDouble("spawn.location.yaw"),
+            (float) getConfig().getDouble("spawn.location.pitch"));
+    }
+    private void sendToAuthSpawn(Player p) {
+        Location spawn = configuredSpawn();
+        if (spawn == null || !p.isOnline()) return;
+        UUID id = p.getUniqueId();
+        internalSpawnTeleports.add(id);
+        try {
+            if (p.teleport(spawn)) frozen.put(id, p.getLocation().clone());
+            else getLogger().warning("No se pudo teletransportar al spawn a " + p.getName());
+        } finally { internalSpawnTeleports.remove(id); }
     }
     private void begin(Player p) {
         UUID id = p.getUniqueId(); authenticated.remove(id); attempts.put(id, 0);
@@ -135,6 +161,22 @@ public final class BastionMCAuth extends JavaPlugin implements Listener, TabComp
         }
     }
     @Override public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (cmd.getName().equalsIgnoreCase("authsetspawn")) {
+            if (!(sender instanceof Player admin)) { sender.sendMessage("Solo jugadores."); return true; }
+            if (!admin.hasPermission("bastionmcauth.admin.setspawn")) { admin.sendMessage(ChatColor.RED + "Sin permiso."); return true; }
+            if (locked(admin)) { admin.sendMessage(ChatColor.RED + "Primero inicia sesion."); return true; }
+            Location loc = admin.getLocation();
+            getConfig().set("spawn.location.world", loc.getWorld().getName());
+            getConfig().set("spawn.location.x", loc.getX());
+            getConfig().set("spawn.location.y", loc.getY());
+            getConfig().set("spawn.location.z", loc.getZ());
+            getConfig().set("spawn.location.yaw", loc.getYaw());
+            getConfig().set("spawn.location.pitch", loc.getPitch());
+            getConfig().set("spawn.teleport-on-join", true);
+            saveConfig();
+            admin.sendMessage(ChatColor.GREEN + "Spawn de BastionMCAuth establecido. Teletransporte al entrar activado.");
+            return true;
+        }
         if (!(sender instanceof Player p)) { sender.sendMessage("Solo jugadores."); return true; }
         if (!locked(p)) { p.sendMessage(msg("already-logged-in")); return true; }
         String name = cmd.getName().toLowerCase(Locale.ROOT);
@@ -165,7 +207,14 @@ public final class BastionMCAuth extends JavaPlugin implements Listener, TabComp
         return true;
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) { return Collections.emptyList(); }
-    @EventHandler(priority = EventPriority.LOWEST) public void join(PlayerJoinEvent e) { begin(e.getPlayer()); }
+    @EventHandler(priority = EventPriority.LOWEST) public void join(PlayerJoinEvent e) {
+        Player p = e.getPlayer();
+        begin(p);
+        // Un tick despues del ingreso, una vez que otros plugins han procesado el evento.
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (p.isOnline() && locked(p)) sendToAuthSpawn(p);
+        });
+    }
     @EventHandler public void quit(PlayerQuitEvent e) { UUID id = e.getPlayer().getUniqueId(); if (locked(e.getPlayer())) restore(e.getPlayer()); authenticated.remove(id); }
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false) public void move(PlayerMoveEvent e) {
         if (!locked(e.getPlayer()) || !getConfig().getBoolean("security.freeze-player", true)) return;

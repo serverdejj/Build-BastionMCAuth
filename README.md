@@ -24,3 +24,15 @@ La base de datos usa bcrypt con sal individual y coste configurable. Se almacena
 - SQLite y mensajes YAML.
 
 Pruebe en un servidor de pruebas antes de desplegar.
+
+
+## Spawn al entrar (v0.1.1-beta)
+
+1. Instala el nuevo JAR y reinicia el servidor.
+2. Inicia sesion como OP, ve al spawn deseado y ejecuta `/authsetspawn`.
+3. Se guardara `spawn.teleport-on-join: true` y la ubicacion en `config.yml`.
+4. Al reconectar, todos los jugadores apareceran en ese spawn y necesitaran `/login` o `/register`.
+5. Para desactivar, cambia `spawn.teleport-on-join: false` y reinicia.
+
+El spawn de BastionMCAuth es independiente del de BastionMCSpawn. Configuralo en el mismo lugar.
+No modifica las cuentas almacenadas en `accounts.db`. No borres ese archivo al actualizar.

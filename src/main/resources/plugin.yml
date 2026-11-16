@@ -1,5 +1,5 @@
 name: BastionMCAuth
-version: 0.1.0-beta
+version: 0.1.1-beta
 main: mc.bastion.auth.BastionMCAuth
 api-version: '1.21'
 author: BASTION MC
@@ -11,3 +11,10 @@ commands:
   register:
     description: Registrar cuenta
     usage: /register <contraseña> <confirmación>
+  authsetspawn:
+    description: Establecer spawn de autenticacion
+    permission: bastionmcauth.admin.setspawn
+permissions:
+  bastionmcauth.admin.setspawn:
+    description: Permite establecer el spawn de autenticacion
+    default: op
