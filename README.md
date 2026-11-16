@@ -36,3 +36,7 @@ Pruebe en un servidor de pruebas antes de desplegar.
 
 El spawn de BastionMCAuth es independiente del de BastionMCSpawn. Configuralo en el mismo lugar.
 No modifica las cuentas almacenadas en `accounts.db`. No borres ese archivo al actualizar.
+
+
+## v0.1.2: seguridad de movimiento
+Se cancela el desplazamiento previo al login y se corrige el bloqueo accidental del teletransporte interno al spawn. Se comprueba periodicamente la posicion. **Beta sin auditoria de seguridad: probar en entorno aislado antes de produccion.**

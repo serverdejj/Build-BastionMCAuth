@@ -149,6 +149,13 @@ public final class BastionMCAuth extends JavaPlugin implements Listener, TabComp
             if (!locked(p)) continue;
             Long end = deadlines.get(p.getUniqueId()); if (end == null) { begin(p); continue; }
             if (now >= end) { p.kickPlayer(msg("timeout")); continue; }
+            if (getConfig().getBoolean("security.freeze-player", true)) {
+                Location anchor = frozen.get(p.getUniqueId());
+                if (anchor != null && (p.getWorld() != anchor.getWorld() || p.getLocation().distanceSquared(anchor) > 0.04)) {
+                    internalSpawnTeleports.add(p.getUniqueId());
+                    try { p.teleport(anchor); } finally { internalSpawnTeleports.remove(p.getUniqueId()); }
+                }
+            }
             if (getConfig().getBoolean("titles.enabled", true)) {
                 try {
                     boolean registered = lookup(key(p)) != null;
@@ -219,9 +226,9 @@ public final class BastionMCAuth extends JavaPlugin implements Listener, TabComp
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false) public void move(PlayerMoveEvent e) {
         if (!locked(e.getPlayer()) || !getConfig().getBoolean("security.freeze-player", true)) return;
         Location a = e.getFrom(), b = e.getTo();
-        if (b != null && (a.getX() != b.getX() || a.getY() != b.getY() || a.getZ() != b.getZ() || a.getWorld() != b.getWorld())) e.setTo(a);
+        if (b != null && (a.getX() != b.getX() || a.getY() != b.getY() || a.getZ() != b.getZ() || a.getWorld() != b.getWorld())) { e.setCancelled(true); e.setTo(a); }
     }
-    @EventHandler(priority = EventPriority.HIGHEST) public void teleport(PlayerTeleportEvent e) { if (locked(e.getPlayer())) e.setCancelled(true); }
+    @EventHandler(priority = EventPriority.HIGHEST) public void teleport(PlayerTeleportEvent e) { if (locked(e.getPlayer()) && !internalSpawnTeleports.contains(e.getPlayer().getUniqueId())) e.setCancelled(true); }
     @EventHandler(priority = EventPriority.HIGHEST) public void portal(PlayerPortalEvent e) { if (locked(e.getPlayer())) e.setCancelled(true); }
     @EventHandler(priority = EventPriority.HIGHEST) public void command(PlayerCommandPreprocessEvent e) {
         if (!locked(e.getPlayer())) return;
